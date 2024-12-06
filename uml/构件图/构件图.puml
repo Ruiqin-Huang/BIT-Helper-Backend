@@ -1,0 +1,65 @@
+' 定义组件
+[数据库] as Database
+
+component 用户系统 as UserSystem {
+    [用户登录] as Login
+    [用户注册] as Register
+    [用户注销] as Logout
+    [信息修改] as UpdateInfo
+    portin IUserAuth
+    portin IUserProfile
+}
+
+component 话题系统 as TopicSystem {
+    [话题增删改查] as TopicCRUD
+    [话题生命周期管理] as TopicLifecycle
+    [投票管理] as VoteManagement
+    portin ITopicManagement
+}
+
+component 反馈系统 as FeedbackSystem {
+    [反馈增删改查] as FeedbackCRUD
+    [反馈生命周期管理] as FeedbackLifecycle
+    [点赞功能] as LikeFeature
+    [评论功能] as CommentFeature
+    portin IFeedbackManagement
+}
+
+component 聊天系统 as ChatSystem {
+    [发送消息] as SendMessage
+    [接收消息] as ReceiveMessage
+    [消息列表查询] as MessageQuery
+    portin IChatService
+}
+
+component 上传模块 as UploadModule {
+    [图片上传] as ImageUpload
+    portin IUploadService
+}
+
+' 定义组件与接口的关系
+IUserAuth --> UserSystem
+IUserProfile --> UserSystem
+
+ITopicManagement --> TopicSystem
+
+IFeedbackManagement --> FeedbackSystem
+
+IChatService --> ChatSystem
+
+IUploadService --> UploadModule
+
+' 定义组件之间的连接
+UserSystem ..> UploadModule : 使用
+TopicSystem ..> UploadModule : 使用
+
+UserSystem ..> TopicSystem : 访问
+UserSystem ..> FeedbackSystem : 访问
+UserSystem ..> ChatSystem : 访问
+
+' 定义数据库连接
+UserSystem --> Database
+TopicSystem --> Database
+FeedbackSystem --> Database
+ChatSystem --> Database
+UploadModule --> Database
