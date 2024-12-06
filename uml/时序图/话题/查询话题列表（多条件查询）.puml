@@ -1,0 +1,73 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用GET方法请求话题列表
+
+c -> ctrl : 调用 TopicList(c)
+
+alt 参数错误
+    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa"})
+else 参数正确
+    ctrl -> db : 根据查询条件查询话题列表
+    db --> ctrl : 返回话题列表 topics
+
+    alt 关键字不为空
+        alt 用户ID不为空
+            alt 标签不为空
+                ctrl -> db : 根据标签筛选 TopicTag 表 db.Where("tag = ?", query.Tag).Find(&topicTags)
+                db --> ctrl : 返回标签 topicTags
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            else 标签为空
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            end
+        else 用户ID为空
+            alt 标签不为空
+                ctrl -> db : 根据标签筛选 TopicTag 表 db.Where("tag = ?", query.Tag).Find(&topicTags)
+                db --> ctrl : 返回标签 topicTags
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            else 标签为空
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            end
+        end
+    else 关键字为空
+        alt 用户ID不为空
+            alt 标签不为空
+                ctrl -> db : 根据标签筛选 TopicTag 表 db.Where("tag = ?", query.Tag).Find(&topicTags)
+                db --> ctrl : 返回标签 topicTags
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            else 标签为空
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            end
+        else 用户ID为空
+            alt 标签不为空
+                ctrl -> db : 根据标签筛选 TopicTag 表 db.Where("tag = ?", query.Tag).Find(&topicTags)
+                db --> ctrl : 返回标签 topicTags
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            else 标签为空
+                ctrl -> db : 根据其他查询条件查询 Topic 表 db.Offset(...).Where(...).Order(order).Find(&topics)
+                db --> ctrl : 返回话题 topics
+            end
+        end
+    end
+
+    ctrl -> ctrl : 将数据库查询结果转换为API格式
+    ctrl -> db : 获取该类型的所有标签 db.Where("type = ?", topicType).Find(&giventypetopics)
+    db --> ctrl : 返回话题 giventypetopics
+    ctrl -> db : 根据 topic_id 列表在 TopicTag 表中查找对应的标签 db.Where("topic_id IN (?)", topicIDs).Find(&allTags)
+    db --> ctrl : 返回标签 allTags
+    ctrl -> c : 返回 JSON 响应 c.JSON(200, response)
+end
+@enduml

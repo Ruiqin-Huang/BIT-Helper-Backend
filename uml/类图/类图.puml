@@ -1,0 +1,156 @@
+@startuml
+
+' 定义类
+class User {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +string Sid
+  +string Nickname
+  +string Avatar
+  +string Intro
+  +int Score
+  +int Identity
+  +string Phone
+}
+
+class Image {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +string Mid
+  +uint Size
+  +uint Uid
+}
+
+class Goods {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +int Type
+  +uint Uid
+  +string Title
+  +string Intro
+  +int Num
+  +float32 Price
+  +string Images
+}
+
+class Order {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +int State
+  +uint Goods
+  +uint Receiver
+}
+
+class Chats {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +time.Time Time
+  +string Type
+  +uint Uid_from
+  +string Content
+  +uint Uid_to
+}
+
+class Comment {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +string Obj
+  +uint Uid
+  +string Text
+  +bool Anonymous
+  +uint LikeNum
+  +uint CommentNum
+  +string ReplyObj
+  +int ReplyUid
+  +uint Rate
+  +string Images
+}
+
+class Like {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +string Obj
+  +uint Uid
+}
+
+class Topic {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +int Type
+  +uint Uid
+  +string Title
+  +string Content
+  +string Images
+  +bool IsVote
+  +uint CommentNum
+  +uint LikeNum
+  +float32 AvgRate
+  +string AI
+}
+
+class VoteOption {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +uint TopicID
+  +uint VoteNum
+  +string Option
+}
+
+class VoteRecord {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +uint TopicID
+  +uint VoteOptionID
+  +uint UserID
+}
+
+class TopicTag {
+  +uint ID
+  +time.Time CreatedAt
+  +time.Time UpdatedAt
+  +gorm.DeletedAt DeletedAt
+  +uint TopicID
+  +string Tag
+}
+
+' 定义关系
+User "1" -- "0..*" Image : 拥有
+User "1" -- "0..*" Goods : 拥有
+User "1" -- "0..*" Order : 拥有
+User "1" -- "0..*" Chats : 发送
+User "1" -- "0..*" Comment : 发表
+User "1" -- "0..*" Like : 点赞
+User "1" -- "0..*" Topic : 发布
+User "1" -- "0..*" VoteRecord : 投票
+
+Goods "1" -- "0..*" Order : 包含
+
+Topic "1" -- "0..*" Comment : 包含
+Topic "1" -- "0..*" Like : 包含
+Topic "1" -- "0..*" VoteOption : 包含
+Topic "1" -- "0..*" VoteRecord : 包含
+Topic "1" -- "0..*" TopicTag : 包含
+
+VoteOption "1" -- "0..*" VoteRecord : 包含
+
+@enduml

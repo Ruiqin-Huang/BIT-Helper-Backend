@@ -1,0 +1,35 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用POST方法发布话题
+c -> ctrl : 调用 TopicPost(c)
+alt 参数错误
+    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa"})
+else 参数正确
+    ctrl -> db : 创建话题 db.Create(&topic)
+    db --> ctrl : 返回创建结果
+    alt 数据库错误
+        ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误Orz"})
+    else 创建成功
+        loop 添加标签
+            ctrl -> db : 创建标签 db.Create(&database.TopicTag)
+            db --> ctrl : 返回创建结果
+        end
+        alt 是投票话题
+            loop 添加投票选项
+                ctrl -> db : 创建投票选项 db.Create(&database.VoteOption)
+                db --> ctrl : 返回创建结果
+            end
+        end
+        ctrl -> ai : 调用 AI 接口生成话题总结
+        ai --> ctrl : 返回 AI 总结
+        ctrl -> c : 返回 200 响应 c.JSON(200, GetTopicAPI(topic, c))
+    end
+end
+@enduml

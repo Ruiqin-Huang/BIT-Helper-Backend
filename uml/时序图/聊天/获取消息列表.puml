@@ -1,0 +1,31 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用GET方法获取消息列表
+c -> ctrl : 调用 GetAllChats(c)
+alt 数据库错误
+    ctrl -> db : 查询发送消息的用户 db.Model(&database.Chats{}).Where("uid_from = ?", c.GetUint("uid_uint")).Distinct("uid_to").Pluck("uid_to", &chats_to)
+    db --> ctrl : 返回错误 err
+    ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误", "error": err.Error()})
+else 查询成功
+    ctrl -> db : 查询接收消息的用户 db.Model(&database.Chats{}).Where("uid_to = ?", c.GetUint("uid_uint")).Distinct("uid_from").Pluck("uid_from", &chats_from)
+    db --> ctrl : 返回错误 err
+    alt 数据库错误
+        ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误", "error": err.Error()})
+    else 查询成功
+        ctrl -> ctrl : 去重 uniqueValues
+        ctrl -> ctrl : 将map的键转换为切片 chats
+        ctrl -> ctrl : 构建消息列表API响应 chatsAPI
+        loop 遍历消息列表
+            ctrl -> ctrl : 调用 GetChatlistAPI(v)
+        end
+        ctrl -> c : 返回 200 响应 c.JSON(200, chatsAPI)
+    end
+end
+@enduml

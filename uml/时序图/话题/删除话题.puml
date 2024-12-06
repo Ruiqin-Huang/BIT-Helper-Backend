@@ -1,0 +1,38 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用DELETE方法删除话题
+c -> ctrl : 调用 TopicDelete(c)
+ctrl -> db : 查询话题 db.First(&topic, "id = ?", id)
+db --> ctrl : 返回话题 topic
+alt 话题不存在
+    ctrl -> c : 返回 404 错误 c.JSON(404, {"msg": "话题不存在Orz"})
+else 话题存在
+    alt 无删除权限
+        ctrl -> c : 返回 401 错误 c.JSON(401, {"msg": "没有删除权限Orz"})
+    else 有删除权限
+        ctrl -> db : 删除话题 db.Delete(&topic)
+        db --> ctrl : 返回删除结果
+        alt 数据库错误
+            ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误Orz"})
+        else 删除成功
+            ctrl -> db : 删除话题标签 db.Where("topic_id = ?", topic.ID).Delete(&database.TopicTag)
+            alt 是投票话题
+                ctrl -> db : 查询投票选项 db.Where("topic_id = ?", topic.ID).Find(&voteOptions)
+                db --> ctrl : 返回投票选项 voteOptions
+                loop 删除投票选项和相关投票记录
+                    ctrl -> db : 删除投票选项 db.Delete(&option)
+                    db -> db : 删除相关投票记录 db.Where("vote_option_id = ?", option.ID).Delete(&database.VoteRecord)
+                end
+            end
+            ctrl -> c : 返回 200 响应 c.JSON(200, {"msg": "删除成功OvO"})
+        end
+    end
+end
+@enduml

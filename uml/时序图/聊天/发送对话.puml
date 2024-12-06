@@ -1,0 +1,29 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用POST方法发送对话
+c -> ctrl : 调用 ChatsPost(c)
+alt 参数错误
+    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa", "error": err.Error()})
+else 参数正确
+    ctrl -> ctrl : 从URL参数中获取接收者ID strconv.Atoi(c.Param("id"))
+    alt 转换错误
+        ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa", "error": err.Error()})
+    else 转换成功
+        ctrl -> ctrl : 创建聊天记录的模型实例
+        ctrl -> db : 在数据库中创建新的聊天记录 db.Create(&chat)
+        db --> ctrl : 返回创建结果
+        alt 数据库错误
+            ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误Orz", "error": err.Error()})
+        else 创建成功
+            ctrl -> c : 返回 200 响应 c.JSON(200, {"msg": "消息发送成功OvO"})
+        end
+    end
+end
+@enduml

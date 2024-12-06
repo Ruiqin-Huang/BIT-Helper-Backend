@@ -1,0 +1,36 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用GET方法通过ID获取消息
+c -> ctrl : 调用 GetChatsById(c)
+alt 参数错误
+    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa", "error": err.Error()})
+else 参数正确
+    ctrl -> ctrl : 从URL参数中获取消息ID strconv.Atoi(c.Param("id"))
+    alt 转换错误
+        ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa", "error": err.Error()})
+    else 转换成功
+        ctrl -> db : 从数据库获取所有记录并按时间字段升序排序 db.Order("created_at asc").Find(&chats, "(uid_from = ? and uid_to = ?) or (uid_to = ? and uid_from = ?)", c.GetUint("uid_uint"), i, c.GetUint("uid_uint"), i)
+        db --> ctrl : 返回查询结果
+        alt 数据库错误
+            ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误", "error": err.Error()})
+        else 查询成功
+            alt 没有找到记录
+                ctrl -> c : 返回 404 错误 c.JSON(404, {"msg": "没有找到记录"})
+            else 找到记录
+                ctrl -> ctrl : 构建消息API响应 chatsAPI
+                loop 遍历消息列表
+                    ctrl -> ctrl : 调用 GetChatsAPI(v)
+                end
+                ctrl -> c : 返回 200 响应 c.JSON(200, chatsAPI)
+            end
+        end
+    end
+end
+@enduml

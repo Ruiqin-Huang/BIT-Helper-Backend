@@ -1,0 +1,34 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+participant "AI 服务" as ai
+
+u -> c : 使用POST方法生成AI总结
+c -> ctrl : 调用 TopicAI(topic)
+ctrl -> db : 查询话题的所有评论 db.Where("obj = ?", "topic"+strconv.Itoa(int(topic.ID))).Find(&comments)
+db --> ctrl : 返回评论 comments
+alt 查询评论失败
+    ctrl -> c : 返回错误 err
+else 查询评论成功
+    ctrl -> ctrl : 构造生成摘要的Prompt
+    ctrl -> ai : 调用 AI 接口 ai.QueryAI(prompt)
+    ai --> ctrl : 返回 AI 总结 aiRes
+    alt AI 接口调用失败
+        ctrl -> c : 返回错误 err
+    else AI 接口调用成功
+        ctrl -> db : 保存AI总结到话题 db.Save(&topic)
+        db --> ctrl : 返回保存结果
+        alt 保存失败
+            ctrl -> c : 返回错误 err
+        else 保存成功
+            ctrl -> c : 返回成功响应
+        end
+    end
+end
+@enduml

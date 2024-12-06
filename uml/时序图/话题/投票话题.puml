@@ -1,0 +1,55 @@
+@startuml
+actor 用户 as u
+
+participant "Gin 上下文" as c
+
+control "控制器" as ctrl
+
+entity "数据库" as db
+
+u -> c : 使用POST方法投票
+c -> ctrl : 调用 VoteTopic(c)
+alt 参数错误
+    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "参数错误awa"})
+else 参数正确
+    ctrl -> db : 从URL参数中获取话题ID
+    ctrl -> db : 查询话题 db.First(&topic, "id = ?", topicID)
+    db --> ctrl : 返回话题 topic
+    alt 话题不存在
+        ctrl -> c : 返回 404 错误 c.JSON(404, {"msg": "话题不存在Orz"})
+    else 话题存在
+        alt 不是投票话题
+            ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "该话题不是投票话题Orz"})
+        else 是投票话题
+            ctrl -> db : 查询投票选项 db.First(&voteOption, "id = ? AND topic_id = ?", query.VoteOptionID, topicID)
+            db --> ctrl : 返回投票选项 voteOption
+            alt 投票选项不存在
+                ctrl -> c : 返回 404 错误 c.JSON(404, {"msg": "投票选项不存在Orz"})
+            else 投票选项存在
+                ctrl -> db : 查询用户是否已经投过票 db.First(&voteRecord, "topic_id = ? AND user_id = ?", topicID, userID)
+                db --> ctrl : 返回投票记录 voteRecord
+                alt 用户已经投过票
+                    ctrl -> c : 返回 400 错误 c.JSON(400, {"msg": "你已经投过票了Orz"})
+                else 用户未投票
+                    ctrl -> db : 创建投票记录 db.Create(&voteRecord)
+                    db --> ctrl : 返回创建结果
+                    alt 数据库错误
+                        ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误Orz"})
+                    else 创建成功
+                        ctrl -> db : 更新投票选项的投票数 voteOption.VoteNum++
+                        ctrl -> db : 保存投票选项 db.Save(&voteOption)
+                        db --> ctrl : 返回保存结果
+                        alt 数据库错误
+                            ctrl -> c : 返回 500 错误 c.JSON(500, {"msg": "数据库错误Orz"})
+                        else 保存成功
+                            ctrl -> ai : 调用 AI 接口生成话题总结
+                            ai --> ctrl : 返回 AI 总结
+                            ctrl -> c : 返回 200 响应 c.JSON(200, {"msg": "投票成功OvO"})
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+@enduml
